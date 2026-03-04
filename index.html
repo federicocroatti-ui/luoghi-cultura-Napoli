@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Clustering Marker – Leaflet</title>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<!-- MarkerCluster CSS -->
+<link rel="stylesheet" href="https://leaflet.github.io/Leaflet.markercluster/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://leaflet.github.io/Leaflet.markercluster/dist/MarkerCluster.Default.css" />
+
+<style>
+    #map { height: 600px; }
+    .popup-img {
+        width: 100%;
+        height: auto;
+    }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- MarkerCluster JS -->
+<script src="https://leaflet.github.io/Leaflet.markercluster/dist/leaflet.markercluster-src.js"></script>
+
+<!-- JQuery per getJSON -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<script>
+// 1) Creazione della mappa OSM
+var map = L.map('map').setView([40.85, 14.27], 12); // Napoli
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+
+// 1) Creiamo il gruppo cluster
+var markers = L.markerClusterGroup();
+
+
+// 2) Carichiamo il file GEOJSON
+$.getJSON("./luoghi_cultura_napoli.geojson", function(data) {
+
+    var geojsonLayer = L.geoJson(data, {
+
+        pointToLayer: function(feature, latlng) {
+
+            // gestiamo l'immagine nel popup
+            var fotografia = "";
+            if (feature.properties.imageUrl) {
+                fotografia = '<img class="popup-img" src="' + feature.properties.imageUrl + '" />';
+            }
+
+            // 3) Icona personalizzata basata su tipologia
+            var customIcon = L.icon({
+                iconUrl: 'icons/' + feature.properties.tipologia + '.png',
+                iconSize: [30, 30],
+                iconAnchor: [15, 30],
+                popupAnchor: [0, -30]
+            });
+
+            // Creiamo il marker
+            var marker = L.marker(latlng, { icon: customIcon });
+
+            // Popup con informazioni
+            var popupContent =
+                "<b>" + feature.properties.nome + "</b><br>" +
+                (feature.properties.tipologia ? ("Tipo: " + feature.properties.tipologia + "<br>") : "") +
+                fotografia;
+
+            marker.bindPopup(popupContent);
+
+            // Aggiungiamo il marker al gruppo cluster
+            markers.addLayer(marker);
+
+            return marker;
+        }
+
+    });
+
+    // Aggiungiamo TUTTO il gruppo markers alla mappa
+    map.addLayer(markers);
+
+});
+</script>
+</body>
+</html>
